@@ -1,0 +1,251 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  padding: 1rem;
+  direction: rtl;
+}
+
+h1 {
+  font-size: 40px;
+}
+
+h2 {
+  font-size: 30px;
+}
+
+p {
+  font-size: 14px;
+}
+
+/* Basic Link styling */
+a,
+.link {
+  font-size: 20px;
+  color: #0070f3;
+  text-decoration: none;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+a:hover,
+.link:hover {
+  color: #0051b3;
+  text-decoration: underline;
+}
+
+a:focus,
+.link:focus {
+  outline: 2px solid #0070f3;
+  outline-offset: 2px;
+}
+
+a:active,
+.link:active {
+  color: #004095;
+}
+
+/* For React Router Links or Next.js Links */
+.nav-link {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  background-color: rgba(0, 112, 243, 0.1);
+}
+
+.nav-link.active {
+  background-color: rgba(0, 112, 243, 0.2);
+  font-weight: 600;
+}
+
+/* Button-style links */
+.link-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: #0070f3;
+  color: white;
+  border-radius: 4px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.link-button:hover {
+  background-color: #0051b3;
+  text-decoration: none;
+  color: white;
+}
+
+/* Breadcrumb links */
+.breadcrumb-link {
+  color: #666;
+}
+
+.breadcrumb-link:not(:last-child)::after {
+  content: "›";
+  margin: 0 0.5rem;
+  color: #999;
+}
+
+.breadcrumb-link:last-child {
+  color: #333;
+  font-weight: 500;
+}
+
+label {
+  font-size: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  color: #444;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+  transition: color 0.2s ease;
+}
+
+/* Label for required fields */
+label.required::after {
+  content: " *";
+  color: #e53935;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  label {
+    color: #e0e0e0;
+  }
+
+  label.focused {
+    color: #4d90fe;
+  }
+}
+/* Styled Select Dropdown */
+
+/* Base styling for the select element */
+select {
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  color: #333;
+  padding: 10px 14px;
+  width: 100%;
+  max-width: 300px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  appearance: none; /* Removes default browser styling */
+
+  /* Custom dropdown arrow */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+
+  /* Ensure text doesn't overlap with the dropdown arrow */
+  padding-right: 40px;
+
+  /* Smooth transitions for hover/focus states */
+  transition: all 0.2s ease;
+}
+
+/* Hover state */
+select:hover {
+  border-color: #c0c0c0;
+  background-color: #f9f9f9;
+}
+
+/* Focus state */
+select:focus {
+  outline: none;
+  border-color: #4d90fe;
+  box-shadow: 0 0 0 3px rgba(77, 144, 254, 0.2);
+}
+
+/* Disabled state */
+select:disabled {
+  opacity: 0.6;
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* Styling for option elements */
+option {
+  font-size: 16px;
+  padding: 10px;
+  background-color: white;
+  color: #333;
+}
+
+/* Ensure selected option stands out */
+option:checked {
+  background-color: #f0f7ff;
+  color: #0066cc;
+  font-weight: 500;
+}
+
+/* Hover state for options (works in some modern browsers) */
+option:hover {
+  background-color: #f5f5f5;
+}
+
+/* Optimizations for different browsers */
+
+/* Firefox-specific styles */
+@-moz-document url-prefix() {
+  select {
+    text-indent: 0.01px;
+    text-overflow: "";
+    padding-right: 30px;
+  }
+}
+
+/* Edge and IE specific fixes */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  select {
+    padding-right: 0;
+    background-image: none;
+  }
+}
+
+/* Styling for select in dark mode if needed */
+@media (prefers-color-scheme: dark) {
+  select {
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+    border-color: #444;
+  }
+
+  option {
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+  }
+
+  select:hover {
+    background-color: #333;
+    border-color: #555;
+  }
+
+  option:checked {
+    background-color: #0c2d5a;
+    color: #ffffff;
+  }
+}
