@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/mongodb-memory-server": "^1.8.0",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.1.0"
+  }
+}
