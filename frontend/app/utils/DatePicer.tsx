@@ -6,7 +6,7 @@ const DatePicker = () => {
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Format date for display in the input field
-  const formatDate = (date) => {
+  const formatDate = (date: Date): string => {
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -15,12 +15,12 @@ const DatePicker = () => {
   };
 
   // Get days in month for calendar generation
-  const getDaysInMonth = (year, month) => {
+  const getDaysInMonth = (year: number, month: number): number => {
     return new Date(year, month + 1, 0).getDate();
   };
 
   // Get day of week for the first day of the month
-  const getFirstDayOfMonth = (year, month) => {
+  const getFirstDayOfMonth = (year: number, month: number): number => {
     return new Date(year, month, 1).getDay();
   };
 
@@ -60,7 +60,11 @@ const DatePicker = () => {
   };
 
   // Select a specific day
-  const selectDay = (day) => {
+  interface SelectDayProps {
+    day: number | null;
+  }
+
+  const selectDay = (day: SelectDayProps["day"]): void => {
     if (day) {
       const newDate = new Date(
         selectedDate.getFullYear(),
