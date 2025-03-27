@@ -65,17 +65,26 @@ router.post("/", async (req: Request, res: Response): Promise<any> => {
       firstName,
       lastName,
       HCProvider,
+      visitDate,
+      operationType,
+      preparationType,
       phone,
       additionalPhone,
+      additionalInfo,
       isSetForOp,
     } = req.body;
 
-    // Check if patient with the same ID already exists
-    const existingPatient = await Patient.findOne({ patientId });
+    // Check if patient with the same ID and visit date already exists
+    const existingPatient = await Patient.findOne({
+      patientId,
+      visitDate: new Date(visitDate),
+    });
+
     if (existingPatient) {
-      return res
-        .status(400)
-        .json({ message: "Patient with this ID already exists" });
+      return res.status(400).json({
+        message:
+          "Patient with this ID already has a record for this visit date",
+      });
     }
 
     // Create new patient
@@ -84,8 +93,12 @@ router.post("/", async (req: Request, res: Response): Promise<any> => {
       firstName,
       lastName,
       HCProvider,
+      visitDate,
+      operationType,
+      preparationType,
       phone,
       additionalPhone,
+      additionalInfo,
       isSetForOp,
     });
 

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "dev:watch": "nodemon --watch . --ext js,jsx,ts,tsx,json,css --exec npm run dev"
   },
   "dependencies": {
     "@types/node": "22.13.10",
@@ -38,6 +39,7 @@
     "@types/testing-library__user-event": "^4.1.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "nodemon": "^3.1.9",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.2.6"
   }

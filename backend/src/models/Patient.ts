@@ -1,14 +1,40 @@
+// models/Patient.ts
 import mongoose, { Schema, Document } from "mongoose";
+
+// Enum definitions for operation types and preparation types
+export enum OpType {
+  COLONO = "colono",
+  SIGMO = "sigmo",
+  GASTRO = "gastro",
+  DOUBLE = "double",
+}
+
+export enum PrepType {
+  PIKO = "piko",
+  MEROKEN = "meroken",
+  NO_PREP = "noPrep",
+}
+
+export enum HCProvider {
+  MACCABI = "maccabi",
+  CLALIT = "clalit",
+  MEUHEDET = "meuhedet",
+  LEUMIT = "leumit",
+}
 
 // Interface defining a Patient document
 export interface IPatient extends Document {
   patientId: string; // Israeli ID (Teudat Zehut)
   firstName: string;
   lastName: string;
-  HCProvider: "maccabi" | "clalit" | "meuhedet" | "leumit";
+  HCProvider: string;
   phone: string;
   additionalPhone?: string;
   isSetForOp: boolean;
+  visitDate?: Date;
+  operationType?: OpType;
+  preparationType?: PrepType;
+  additionalInfo?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,7 +68,7 @@ const PatientSchema: Schema = new Schema(
     HCProvider: {
       type: String,
       required: [true, "Health care provider is required"],
-      enum: ["maccabi", "clalit", "meuhedet", "leumit"],
+      enum: Object.values(HCProvider),
     },
     phone: {
       type: String,
@@ -61,6 +87,22 @@ const PatientSchema: Schema = new Schema(
       type: String,
       trim: true,
     },
+    visitDate: {
+      type: Date,
+      default: Date.now,
+    },
+    operationType: {
+      type: String,
+      enum: Object.values(OpType),
+    },
+    preparationType: {
+      type: String,
+      enum: Object.values(PrepType),
+    },
+    additionalInfo: {
+      type: String,
+      trim: true,
+    },
     isSetForOp: {
       type: Boolean,
       default: false,
@@ -70,6 +112,7 @@ const PatientSchema: Schema = new Schema(
     timestamps: true,
   }
 );
+PatientSchema.index({ patientId: 1, visitDate: 1 }, { unique: true });
 
 // Create and export the Patient model
 export default mongoose.model<IPatient>("Patient", PatientSchema);

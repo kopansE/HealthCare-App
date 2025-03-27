@@ -4,16 +4,19 @@ import React, { useState, ChangeEvent, FormEvent } from "react";
 import DatePicker from "../utils/DatePicer";
 import IsraeliIDValidator from "../utils/IsraeliIDValidator";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
 const OperationsPage = () => {
   // State for form fields
   const [operationDate, setOperationDate] = useState<Date>(new Date());
   const [location, setLocation] = useState<string>("asotaCalaniotAshdod");
   const [startHour, setStartHour] = useState<string>("09:00");
-  const [operationType, setOperationType] = useState<string>("colono");
-  const [patientId, setPatientId] = useState<string>("");
-  const [isPatientIdValid, setIsPatientIdValid] = useState<boolean>(false);
-  const [isPatientIdValidated, setIsPatientIdValidated] =
-    useState<boolean>(false);
+  const [endHour, setEndHour] = useState<string>("17:00");
+
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   // Handle date change from DatePicker
   const handleDateChange = (date: Date) => {
@@ -31,44 +34,8 @@ const OperationsPage = () => {
     return locations[locationCode] || locationCode;
   };
 
-  // Calculate end time based on operation type and start time
-  const calculateEndTime = (startTime: string, opType: string): string => {
-    const [hours, minutes] = startTime.split(":").map(Number);
-    let durationMinutes = 0;
-
-    switch (opType) {
-      case "double":
-        durationMinutes = 45;
-        break;
-      case "colono":
-        durationMinutes = 30;
-        break;
-      case "gastro":
-      case "sigmo":
-        durationMinutes = 15;
-        break;
-      default:
-        durationMinutes = 30;
-    }
-
-    // Calculate new time
-    let newMinutes = minutes + durationMinutes;
-    let newHours = hours;
-
-    if (newMinutes >= 60) {
-      newHours += Math.floor(newMinutes / 60);
-      newMinutes %= 60;
-    }
-
-    // Format as HH:MM
-    return `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(
-      2,
-      "0"
-    )}`;
-  };
-
   // Handle submission
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     // Check if all required fields are filled correctly
@@ -77,54 +44,85 @@ const OperationsPage = () => {
       return;
     }
 
-    // Calculate end time
-    const endTime = calculateEndTime(startHour, operationType);
+    // -------------------- OLD CODE --------------------
+    //     // Create summary
+    //     const summary = `
+    // תאריך ביצוע פעולה: ${operationDate.toLocaleDateString("he-IL")}
+    // מיקום: ${getLocationName(location)}
+    // שעת התחלה: ${startHour}
+    // שעת סיום: ${endHour}
+    // `;
 
-    // Create summary
-    const summary = `
-תאריך ביצוע פעולה: ${operationDate.toLocaleDateString("he-IL")}
-מיקום: ${getLocationName(location)}
-סוג פעולה: ${getOperationTypeName(operationType)}
-שעת התחלה: ${startHour}
-שעת סיום: ${endTime}
-ת.ז. מטופל: ${patientId}
-`;
+    //     // Show summary
+    //     alert(summary);
+    // -------------------- OLD CODE --------------------
 
-    // Show summary
-    alert(summary);
-
-    // Clear form fields
-    setOperationDate(new Date());
-    setLocation("asotaCalaniotAshdod");
-    setStartHour("09:00");
-    setOperationType("colono");
-    setPatientId("");
-    setIsPatientIdValid(false);
-    setIsPatientIdValidated(false);
-    setPatientId("");
-  };
-
-  // Get operation type display name
-  const getOperationTypeName = (opType: string): string => {
-    const types: Record<string, string> = {
-      colono: "קולונו",
-      sigmo: "סיגמו",
-      gastro: "גסטרו",
-      double: "כפולה",
+    // Prepare operation day data
+    const operationDayData = {
+      date: operationDate.toISOString(),
+      location,
+      startHour,
+      endHour,
     };
-    return types[opType] || opType;
+
+    setIsLoading(true);
+
+    try {
+      // Send data to backend API
+      const response = await fetch(`${API_URL}/operationday`, {
+        method: "POST", // Create new operation day
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(operationDayData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "שגיאה בשמירת יום פעולות");
+      }
+
+      // Show success message
+      setSuccess("יום הפעולות נשמר בהצלחה");
+
+      // Clear form fields
+      setOperationDate(new Date());
+      setLocation("asotaCalaniotAshdod");
+      setStartHour("09:00");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("שגיאה לא ידועה בשמירת יום הפעולות");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="p-4 max-w-3xl mx-auto rtl">
       <h1 className="text-2xl font-bold mb-6 text-right">הגדרת יום פעולות</h1>
 
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-right">
+          <p>{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-right">
+          <p>{success}</p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Operation Date */}
           <div className="text-right">
             <label className="block mb-2">
-              תאריך ביצוע פעולה:
+              תאריך יום פעולה:
               <DatePicker />
             </label>
           </div>
@@ -160,14 +158,18 @@ const OperationsPage = () => {
               required
             />
           </div>
-
-          {/* patient ID field */}
-          {/* ID Validator */}
-          <div className="md:col-span-2">
-            <IsraeliIDValidator
-              value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-              onValidityChange={setIsPatientIdValid}
+          {/* End Hour */}
+          <div className="text-right">
+            <label htmlFor="endHour" className="block mb-2">
+              שעת סיום:
+            </label>
+            <input
+              id="endHour"
+              type="time"
+              value={endHour}
+              onChange={(e) => setEndHour(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+              required
             />
           </div>
 

@@ -1,54 +1,40 @@
-// src/index.ts
-import express, { Express, Request, Response } from "express";
-import dotenv from "dotenv";
+// index.ts
+import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 
 // Import routes
-import patientRoutes from "./routes/patients";
 import doctorRoutes from "./routes/doctors";
-import opHistoryRoutes from "./routes/ophistory";
+import patientRoutes from "./routes/patients";
+import operationDayRoutes from "./routes/operationday";
+import schedulerRoutes from "./routes/scheduler";
 
 // Load environment variables
 dotenv.config();
 
-// Initialize express app
-const app: Express = express();
-const port = process.env.PORT || 5000;
+// Initialize express
+const app = express();
 
-// Connect to MongoDB - but only if not in test mode
-// Tests will handle their own connection
-if (process.env.NODE_ENV !== "test") {
-  connectDB();
-}
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use("/api/patients", patientRoutes);
+// Define routes
 app.use("/api/doctors", doctorRoutes);
-app.use("/api/ophistory", opHistoryRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/operationday", operationDayRoutes);
+app.use("/api/scheduler", schedulerRoutes);
 
-// Basic route for testing
-app.get("/", (req: Request, res: Response) => {
-  res.send("Healthcare API is running");
+// Define port
+const PORT = process.env.PORT || 5000;
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
-// Start server - but only if not in test mode
-let server: any;
-if (process.env.NODE_ENV !== "test") {
-  server = app.listen(port, () => {
-    console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
-  });
-}
-
-// Function to close the server - useful for testing
-export const closeServer = () => {
-  if (server) {
-    server.close();
-  }
-};
 
 export default app;
