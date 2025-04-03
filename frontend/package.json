@@ -10,7 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "dev:watch": "nodemon --watch . --ext js,jsx,ts,tsx,json,css --exec npm run dev"
+    "dev:watch": "nodemon --watch . --ext js,jsx,ts,tsx,json,css --exec npm run dev",
+    "start:watch": "nodemon --watch . --ext js,jsx,ts,tsx,json,css --exec npm next start"
   },
   "dependencies": {
     "@types/node": "22.13.10",

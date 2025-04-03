@@ -31,6 +31,7 @@ export interface IPatient extends Document {
   phone: string;
   additionalPhone?: string;
   isSetForOp: boolean;
+  doesntWantSurgery: boolean;
   visitDate?: Date;
   operationType?: OpType;
   preparationType?: PrepType;
@@ -45,7 +46,6 @@ const PatientSchema: Schema = new Schema(
     patientId: {
       type: String,
       required: [true, "ID is required"],
-      unique: true,
       trim: true,
       // Validate Israeli ID format (9 digits)
       validate: {
@@ -107,12 +107,16 @@ const PatientSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
+    doesntWantSurgery: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
 );
-PatientSchema.index({ patientId: 1, visitDate: 1 }, { unique: true });
+PatientSchema.index({ patientId: 1, visitDate: 1 });
 
 // Create and export the Patient model
 export default mongoose.model<IPatient>("Patient", PatientSchema);

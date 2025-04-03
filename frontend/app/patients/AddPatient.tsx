@@ -166,7 +166,10 @@ const AddPatient = () => {
         <div className="text-right">
           <label className="block mb-2">
             תאריך ביקור במרפאה:
-            <DatePicker />
+            <DatePicker
+              selectedDate={visitDate}
+              onChange={handleDateChange}
+            />{" "}
           </label>
         </div>
 

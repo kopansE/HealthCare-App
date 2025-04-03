@@ -1,13 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const DatePicker = () => {
+interface DatePickerProps {
+  selectedDate?: Date;
+  onChange?: (date: Date) => void;
+}
+
+const DatePicker: React.FC<DatePickerProps> = ({
+  selectedDate = new Date(),
+  onChange,
+}) => {
   // State to track selected date and calendar visibility
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentDate, setCurrentDate] = useState<Date>(selectedDate);
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+
+  // Update internal date when prop changes
+  useEffect(() => {
+    setCurrentDate(selectedDate);
+  }, [selectedDate]);
 
   // Format date for display in the input field
   const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("he-IL", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -26,8 +39,8 @@ const DatePicker = () => {
 
   // Generate calendar days
   const generateCalendarDays = () => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
     const daysInMonth = getDaysInMonth(year, month);
     const firstDayOfMonth = getFirstDayOfMonth(year, month);
 
@@ -48,42 +61,43 @@ const DatePicker = () => {
 
   // Change month handlers
   const goToPreviousMonth = () => {
-    setSelectedDate(
-      new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1)
-    );
+    const newDate = new Date(currentDate);
+    newDate.setMonth(newDate.getMonth() - 1);
+    setCurrentDate(newDate);
   };
 
   const goToNextMonth = () => {
-    setSelectedDate(
-      new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1)
-    );
+    const newDate = new Date(currentDate);
+    newDate.setMonth(newDate.getMonth() + 1);
+    setCurrentDate(newDate);
   };
 
   // Select a specific day
-  interface SelectDayProps {
-    day: number | null;
-  }
-
-  const selectDay = (day: SelectDayProps["day"]): void => {
+  const selectDay = (day: number | null): void => {
     if (day) {
       const newDate = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth(),
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
         day
       );
-      setSelectedDate(newDate);
+      setCurrentDate(newDate);
       setShowCalendar(false); // Hide calendar after selection
+
+      // Call the onChange handler if provided
+      if (onChange) {
+        onChange(newDate);
+      }
     }
   };
 
   // Get current month and year for display
-  const currentMonthYear = selectedDate.toLocaleDateString("en-US", {
+  const currentMonthYear = currentDate.toLocaleDateString("he-IL", {
     year: "numeric",
     month: "long",
   });
 
-  // Days of the week headers
-  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Days of the week headers (for Hebrew locale)
+  const weekdays = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"];
 
   return (
     <div className="w-64 relative">
@@ -92,7 +106,7 @@ const DatePicker = () => {
         className="p-2 border border-gray-300 rounded-md bg-white cursor-pointer flex justify-between items-center"
         onClick={() => setShowCalendar(!showCalendar)}
       >
-        <span>{formatDate(selectedDate)}</span>
+        <span>{formatDate(currentDate)}</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-5 w-5 text-gray-400"
@@ -178,9 +192,9 @@ const DatePicker = () => {
                   ${day ? "cursor-pointer hover:bg-gray-100" : ""}
                   ${
                     day &&
-                    day === selectedDate.getDate() &&
-                    selectedDate.getMonth() ===
-                      new Date(selectedDate).getMonth()
+                    day === currentDate.getDate() &&
+                    selectedDate.getMonth() === currentDate.getMonth() &&
+                    selectedDate.getFullYear() === currentDate.getFullYear()
                       ? "bg-blue-500 text-white"
                       : "text-gray-700"
                   }
@@ -192,15 +206,19 @@ const DatePicker = () => {
           </div>
 
           {/* Today button */}
-          <div className="border-t p-2">
+          <div className="border-t p-2 flex justify-center">
             <button
               onClick={() => {
-                setSelectedDate(new Date());
+                const today = new Date();
+                setCurrentDate(today);
                 setShowCalendar(false);
+                if (onChange) {
+                  onChange(today);
+                }
               }}
-              className="py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+              className="w-full py-1 px-2 bg-gray-100 hover:bg-gray-200 rounded text-sm"
             >
-              Today
+              היום
             </button>
           </div>
         </div>

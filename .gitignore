@@ -69,3 +69,5 @@ backend/.env
 
 # VS Code Workspace files
 *.code-workspace
+package-lock.json
+pnpm-lock.yaml

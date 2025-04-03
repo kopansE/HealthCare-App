@@ -10,10 +10,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src/**/*.ts",
-    "seed:doctors": "ts-node src/scripts/seed.ts",
-    "seed:patients": "ts-node src/scripts/seedPatients.ts",
-    "seed:ophistory": "ts-node src/scripts/seedOpHistory.ts",
-    "seed:all": "bash src/scripts/seedAll.sh",
+    "seed": "ts-node src/scripts/seed.ts",
+    "updatePatientIndexes": "ts-node src/scripts/updatePatientIndexes.ts",
+    "seed:prod": "NODE_ENV=production ts-node src/scripts/seed.ts",
     "db:check": "ts-node src/scripts/checkDbConnection.ts"
   },
   "keywords": [],
