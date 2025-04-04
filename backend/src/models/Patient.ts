@@ -90,6 +90,13 @@ const PatientSchema: Schema = new Schema(
     visitDate: {
       type: Date,
       default: Date.now,
+      get: function (date: Date): Date {
+        if (date) {
+          // Return just the date part, removing timezone effect
+          return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        }
+        return date;
+      },
     },
     operationType: {
       type: String,

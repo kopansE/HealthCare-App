@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import React, { useState, useEffect, FormEvent } from "react";
 import DatePicker from "../utils/DatePicer";
-import IsraeliIDValidator from "../utils/IsraeliIDValidator";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -12,11 +11,39 @@ const OperationsPage = () => {
   const [location, setLocation] = useState<string>("asotaCalaniotAshdod");
   const [startHour, setStartHour] = useState<string>("09:00");
   const [endHour, setEndHour] = useState<string>("17:00");
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
 
   // Loading and error states
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
+
+  // Fetch a default doctor on component mount
+  useEffect(() => {
+    const fetchDefaultDoctor = async () => {
+      try {
+        const response = await fetch(`${API_URL}/doctors`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) {
+            // Use the first doctor as default
+            setSelectedDoctorId(data[0]._id);
+          } else {
+            setError(
+              "No doctors found in the system. Please add a doctor first."
+            );
+          }
+        } else {
+          setError("Failed to fetch doctors");
+        }
+      } catch (error) {
+        setError("Error fetching doctors");
+        console.error("Error fetching doctors:", error);
+      }
+    };
+
+    fetchDefaultDoctor();
+  }, []);
 
   // Handle date change from DatePicker
   const handleDateChange = (date: Date) => {
@@ -39,33 +66,29 @@ const OperationsPage = () => {
     e.preventDefault();
 
     // Check if all required fields are filled correctly
-    if (!operationDate || !startHour) {
-      alert("אנא מלא את כל השדות הנדרשים");
+    if (!operationDate || !startHour || !endHour) {
+      setError("אנא מלא את כל השדות הנדרשים");
       return;
     }
-
-    // -------------------- OLD CODE --------------------
-    //     // Create summary
-    //     const summary = `
-    // תאריך ביצוע פעולה: ${operationDate.toLocaleDateString("he-IL")}
-    // מיקום: ${getLocationName(location)}
-    // שעת התחלה: ${startHour}
-    // שעת סיום: ${endHour}
-    // `;
-
-    //     // Show summary
-    //     alert(summary);
-    // -------------------- OLD CODE --------------------
-
+    // Create date string in YYYY-MM-DD format to prevent timezone issues
+    const formatDateNoTimezone = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
     // Prepare operation day data
     const operationDayData = {
-      date: operationDate.toISOString(),
+      date: formatDateNoTimezone(operationDate),
       location,
       startHour,
       endHour,
+      doctorId: selectedDoctorId, // Include doctorId in the request
     };
 
     setIsLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
       // Send data to backend API
@@ -90,6 +113,7 @@ const OperationsPage = () => {
       setOperationDate(new Date());
       setLocation("asotaCalaniotAshdod");
       setStartHour("09:00");
+      setEndHour("17:00");
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -123,9 +147,14 @@ const OperationsPage = () => {
           <div className="text-right">
             <label className="block mb-2">
               תאריך יום פעולה:
-              <DatePicker />
+              <DatePicker
+                selectedDate={operationDate}
+                onChange={handleDateChange}
+              />
             </label>
           </div>
+
+          {/* Default doctor is used - no selection needed */}
 
           {/* Location */}
           <div className="text-right">
@@ -135,6 +164,7 @@ const OperationsPage = () => {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                required
               >
                 <option value="asotaCalaniotAshdod">אסותא כלניות אשדוד</option>
                 <option value="asotaHolon">אסותא חולון</option>
@@ -158,6 +188,7 @@ const OperationsPage = () => {
               required
             />
           </div>
+
           {/* End Hour */}
           <div className="text-right">
             <label htmlFor="endHour" className="block mb-2">
@@ -204,9 +235,12 @@ const OperationsPage = () => {
         <div className="flex justify-center mt-8">
           <button
             type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={isLoading}
           >
-            הגדר יום פעולות
+            {isLoading ? "שומר..." : "הגדר יום פעולות"}
           </button>
         </div>
       </form>

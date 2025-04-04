@@ -1,7 +1,7 @@
-// routes/operationday.ts
+// routes/operationday.ts - Updated with additional validation
 import express, { Request, Response } from "express";
 import OperationDay, { Location } from "../models/OperationDay";
-import Schedule from "../models/Schedule"; // Add this missing import
+import Schedule from "../models/Schedule";
 import SchedulerService from "../services/SchedulerService";
 
 const router = express.Router();
@@ -11,10 +11,34 @@ const router = express.Router();
 // @access  Public
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const operationDays = await OperationDay.find().sort({ date: 1 });
+    const operationDays = await OperationDay.find()
+      .populate("doctorId", "firstName lastName") // Populate doctor information
+      .sort({ date: 1 });
     res.json(operationDays);
   } catch (error) {
     console.error("Error fetching operation days:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// @route   GET /api/operationday/available
+// @desc    Get all available (not locked) operation days in the future
+// @access  Public
+router.get("/available", async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const operationDays = await OperationDay.find({
+      date: { $gte: today },
+      isLocked: { $ne: true },
+    })
+      .populate("doctorId", "firstName lastName") // Populate doctor information
+      .sort({ date: 1 });
+
+    res.json(operationDays);
+  } catch (error) {
+    console.error("Error fetching available operation days:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -24,7 +48,10 @@ router.get("/", async (req: Request, res: Response) => {
 // @access  Public
 router.get("/:id", async (req: Request, res: Response): Promise<any> => {
   try {
-    const operationDay = await OperationDay.findById(req.params.id);
+    const operationDay = await OperationDay.findById(req.params.id).populate(
+      "doctorId",
+      "firstName lastName"
+    ); // Populate doctor information
 
     if (!operationDay) {
       return res.status(404).json({ message: "Operation day not found" });
@@ -42,17 +69,26 @@ router.get("/:id", async (req: Request, res: Response): Promise<any> => {
 // @access  Public
 router.post("/", async (req: Request, res: Response): Promise<any> => {
   try {
-    const { date, location, startHour, endHour } = req.body;
+    const { date, location, startHour, endHour, doctorId } = req.body;
 
-    // Check if an operation day already exists for this date and location
+    // Check if doctorId is provided
+    if (!doctorId) {
+      return res.status(400).json({
+        message: "Doctor ID is required",
+      });
+    }
+
+    // Check if an operation day already exists for this date, location and doctor
     const existingDay = await OperationDay.findOne({
       date: new Date(date),
       location,
+      doctorId,
     });
 
     if (existingDay) {
       return res.status(400).json({
-        message: "An operation day already exists for this date and location",
+        message:
+          "An operation day already exists for this date, location and doctor",
       });
     }
 
@@ -62,10 +98,18 @@ router.post("/", async (req: Request, res: Response): Promise<any> => {
       location,
       startHour,
       endHour,
+      doctorId,
+      isLocked: false,
     });
 
     const savedOperationDay = await newOperationDay.save();
-    res.status(201).json(savedOperationDay);
+
+    // Populate doctor information for the response
+    const populatedOperationDay = await OperationDay.findById(
+      savedOperationDay._id
+    ).populate("doctorId", "firstName lastName");
+
+    res.status(201).json(populatedOperationDay);
   } catch (error: any) {
     console.error("Error creating operation day:", error);
 
@@ -76,20 +120,34 @@ router.post("/", async (req: Request, res: Response): Promise<any> => {
       });
     }
 
+    // Handle duplicate key error (MongoDB error code 11000)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message:
+          "An operation day already exists for this date, location and doctor combination",
+      });
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// @route   PUT /api/operationday/:id
-// @desc    Update an operation day
-// @access  Public
+// Rest of the code remains the same...
 router.put("/:id", async (req: Request, res: Response): Promise<any> => {
   try {
+    // First check if the operation day is locked
+    const existingDay = await OperationDay.findById(req.params.id);
+    if (existingDay && existingDay.isLocked) {
+      return res.status(400).json({
+        message: "Cannot update a locked operation day",
+      });
+    }
+
     const updatedOperationDay = await OperationDay.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
       { new: true, runValidators: true }
-    );
+    ).populate("doctorId", "firstName lastName");
 
     if (!updatedOperationDay) {
       return res.status(404).json({ message: "Operation day not found" });
@@ -114,15 +172,29 @@ router.put("/:id", async (req: Request, res: Response): Promise<any> => {
       });
     }
 
+    // Handle duplicate key error (MongoDB error code 11000)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message:
+          "This update would create a duplicate operation day for the same date, location and doctor",
+      });
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// @route   DELETE /api/operationday/:id
-// @desc    Delete an operation day
-// @access  Public
+// The remaining routes stay the same...
 router.delete("/:id", async (req: Request, res: Response): Promise<any> => {
   try {
+    // Check if the operation day is locked
+    const existingDay = await OperationDay.findById(req.params.id);
+    if (existingDay && existingDay.isLocked) {
+      return res.status(400).json({
+        message: "Cannot delete a locked operation day",
+      });
+    }
+
     // Check if there are any schedules for this operation day
     const scheduleCount = await Schedule.countDocuments({
       operationDayId: req.params.id,
@@ -148,9 +220,6 @@ router.delete("/:id", async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// @route   GET /api/operationday/date/:date
-// @desc    Get operation days by date
-// @access  Public
 router.get("/date/:date", async (req: Request, res: Response): Promise<any> => {
   try {
     const date = new Date(req.params.date);
@@ -165,7 +234,7 @@ router.get("/date/:date", async (req: Request, res: Response): Promise<any> => {
 
     const operationDays = await OperationDay.find({
       date: { $gte: startDate, $lte: endDate },
-    });
+    }).populate("doctorId", "firstName lastName");
 
     res.json(operationDays);
   } catch (error) {
@@ -173,5 +242,58 @@ router.get("/date/:date", async (req: Request, res: Response): Promise<any> => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+router.post("/:id/lock", async (req: Request, res: Response): Promise<any> => {
+  try {
+    const operationDay = await OperationDay.findById(req.params.id);
+
+    if (!operationDay) {
+      return res.status(404).json({ message: "Operation day not found" });
+    }
+
+    operationDay.isLocked = true;
+    await operationDay.save();
+
+    const populatedOperationDay = await OperationDay.findById(
+      operationDay._id
+    ).populate("doctorId", "firstName lastName");
+
+    res.json({
+      message: "Operation day locked successfully",
+      operationDay: populatedOperationDay,
+    });
+  } catch (error) {
+    console.error("Error locking operation day:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post(
+  "/:id/unlock",
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const operationDay = await OperationDay.findById(req.params.id);
+
+      if (!operationDay) {
+        return res.status(404).json({ message: "Operation day not found" });
+      }
+
+      operationDay.isLocked = false;
+      await operationDay.save();
+
+      const populatedOperationDay = await OperationDay.findById(
+        operationDay._id
+      ).populate("doctorId", "firstName lastName");
+
+      res.json({
+        message: "Operation day unlocked successfully",
+        operationDay: populatedOperationDay,
+      });
+    } catch (error) {
+      console.error("Error unlocking operation day:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
 
 export default router;

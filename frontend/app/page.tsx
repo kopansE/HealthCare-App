@@ -27,6 +27,13 @@ export default function Home() {
         >
           ניהול ימי פעולות
         </Link>
+
+        <Link
+          href="/batch-scheduling"
+          className="block p-4 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 text-center"
+        >
+          שיבוץ מרובה
+        </Link>
       </div>
     </main>
   );

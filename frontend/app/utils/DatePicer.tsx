@@ -129,6 +129,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
           {/* Calendar header with month/year and navigation */}
           <div className="flex justify-between items-center p-2 border-b">
             <button
+              type="button"
               onClick={goToPreviousMonth}
               className="p-1 rounded-full hover:bg-gray-100"
             >
@@ -149,6 +150,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             </button>
             <div className="font-semibold">{currentMonthYear}</div>
             <button
+              type="button"
               onClick={goToNextMonth}
               className="p-1 rounded-full hover:bg-gray-100"
             >
@@ -208,6 +210,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
           {/* Today button */}
           <div className="border-t p-2 flex justify-center">
             <button
+              type="button"
               onClick={() => {
                 const today = new Date();
                 setCurrentDate(today);

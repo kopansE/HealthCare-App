@@ -77,77 +77,90 @@ function getWeekdaysInMonth(year: number, month: number): Date[] {
   return weekdays;
 }
 
-// Distribute operation days among available locations
-function distributeLocations(
-  dates: Date[]
-): Array<{ date: Date; location: Location }> {
-  const distribution: Array<{ date: Date; location: Location }> = [];
-  const locations = Object.values(Location);
-
-  dates.forEach((date, index) => {
-    // Distribute locations in a round-robin fashion, but with some randomness
-    const locationIndex = Math.floor(Math.random() * locations.length);
-    distribution.push({
-      date,
-      location: locations[locationIndex],
-    });
-
-    // Sometimes add a second location for the same day (about 30% of the time)
-    if (Math.random() < 0.3) {
-      const secondLocationIndex =
-        (locationIndex +
-          1 +
-          Math.floor(Math.random() * (locations.length - 1))) %
-        locations.length;
-      distribution.push({
-        date,
-        location: locations[secondLocationIndex],
-      });
-    }
-  });
-
-  return distribution;
-}
-
-// Generate random operation days
+// Generate random operation days with doctor assignment ensuring uniqueness
 async function seedOperationDays(): Promise<void> {
   try {
+    // Get all available doctors
+    const doctors = await Doctor.find();
+    if (doctors.length === 0) {
+      console.error("No doctors found for assigning to operation days");
+      return;
+    }
+
     // Get weekdays in April 2025
     const april2025Weekdays = getWeekdaysInMonth(2025, 4);
 
-    // Distribute locations for these dates
-    const operationDaysData = distributeLocations(april2025Weekdays);
+    // Array to keep track of created operation days to ensure uniqueness
+    const createdOperationDays: {
+      date: Date;
+      location: Location;
+      doctorId: mongoose.Types.ObjectId;
+    }[] = [];
+    const operationDaysToCreate = [];
 
-    // Prepare operation days with appropriate start/end hours
-    const operationDays = operationDaysData.map(({ date, location }) => {
-      // Different locations might have different hours
-      let startHour = "09:00";
-      let endHour = "17:00";
+    // For each weekday
+    for (const date of april2025Weekdays) {
+      // For each location
+      for (const location of Object.values(Location)) {
+        // Pick a random doctor that hasn't been assigned to this date/location yet
+        const availableDoctors = doctors.filter((doctor) => {
+          // Check if this doctor already has an assignment for this date and location
+          return !createdOperationDays.some(
+            (day) =>
+              day.date.getTime() === date.getTime() &&
+              day.location === location &&
+              day.doctorId.toString() === (doctor._id as any).toString()
+          );
+        });
 
-      // Slight variations for different locations
-      if (location === Location.ASOTA_HOLON) {
-        startHour = "08:30";
-        endHour = "16:30";
-      } else if (location === Location.ASOTA_RAMAT_HAHAYAL) {
-        startHour = "09:00";
-        endHour = "18:00";
-      } else if (location === Location.BEST_MEDICAL) {
-        startHour = "08:00";
-        endHour = "16:00";
+        if (availableDoctors.length > 0) {
+          const randomDoctorIndex = Math.floor(
+            Math.random() * availableDoctors.length
+          );
+          const doctor = availableDoctors[randomDoctorIndex];
+
+          // Different locations might have different hours
+          let startHour = "09:00";
+          let endHour = "17:00";
+
+          // Slight variations for different locations
+          if (location === Location.ASOTA_HOLON) {
+            startHour = "08:30";
+            endHour = "16:30";
+          } else if (location === Location.ASOTA_RAMAT_HAHAYAL) {
+            startHour = "09:00";
+            endHour = "18:00";
+          } else if (location === Location.BEST_MEDICAL) {
+            startHour = "08:00";
+            endHour = "16:00";
+          }
+
+          const operationDay = {
+            date,
+            location,
+            startHour,
+            endHour,
+            doctorId: doctor._id as mongoose.Types.ObjectId,
+            isLocked: false,
+          };
+
+          // Add to tracking array
+          createdOperationDays.push({
+            date,
+            location,
+            doctorId: doctor._id as mongoose.Types.ObjectId,
+          });
+
+          // Add to array for batch creation
+          operationDaysToCreate.push(operationDay);
+        }
       }
-
-      return {
-        date,
-        location,
-        startHour,
-        endHour,
-      };
-    });
+    }
 
     // Insert operation days into database
-    await OperationDay.insertMany(operationDays);
+    await OperationDay.insertMany(operationDaysToCreate);
     console.log(
-      `✅ Added ${operationDays.length} operation days for April 2025`
+      `✅ Added ${operationDaysToCreate.length} operation days for April 2025`
     );
   } catch (error) {
     console.error("Error seeding operation days:", error);
@@ -159,7 +172,7 @@ async function seedDoctors(): Promise<void> {
   try {
     const doctors = [];
 
-    // Generate 10 doctors
+    // Generate 10 doctors with different IDs
     for (let i = 0; i < 10; i++) {
       doctors.push({
         doctorId: generateIsraeliID(),
@@ -176,14 +189,15 @@ async function seedDoctors(): Promise<void> {
   }
 }
 
-// Seed patients data
+// Seed patients data with appropriate health providers for scheduling
 async function seedPatients(): Promise<void> {
   try {
     const patients = [];
     const operationTypes = Object.values(OpType);
     const healthProviders = Object.values(HCProvider);
 
-    // Generate 50 patients
+    // Generate patients with specific distribution of health providers
+    // to ensure we have patients for all locations
     for (let i = 0; i < 50; i++) {
       // Select operation type
       const operationType =
@@ -199,9 +213,19 @@ async function seedPatients(): Promise<void> {
           Math.random() < 0.5 ? PrepType.PIKO : PrepType.MEROKEN;
       }
 
-      // Random health provider
-      const healthProvider =
-        healthProviders[Math.floor(Math.random() * healthProviders.length)];
+      // Control health provider distribution to ensure we have patients for all locations
+      // - Maccabi: 50% (can go to Holon, Ramat HaHayal, Calaniot)
+      // - Leumit: 30% (can go to Best Medical, Ramat HaHayal, Calaniot)
+      // - Others: 20% (for testing invalid cases)
+      let healthProvider;
+      const rand = Math.random();
+      if (rand < 0.5) {
+        healthProvider = HCProvider.MACCABI;
+      } else if (rand < 0.8) {
+        healthProvider = HCProvider.LEUMIT;
+      } else {
+        healthProvider = healthProviders[Math.floor(Math.random() * 2) + 2]; // CLALIT or MEUHEDET
+      }
 
       // Generate a visit date (between 1 and 30 days ago)
       const visitDate = new Date();
@@ -246,7 +270,7 @@ async function seedDatabase(): Promise<void> {
     await mongoose.connect(MONGODB_URI);
     console.log("Connected to MongoDB");
 
-    // Clear existing data (optional - comment out if you want to keep existing data)
+    // Clear existing data
     await Doctor.deleteMany({});
     await Patient.deleteMany({});
     await OperationDay.deleteMany({});

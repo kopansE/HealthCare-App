@@ -66,6 +66,14 @@ const AddPatient = () => {
       ? additionalPhone.replace(/\D/g, "")
       : "";
 
+    // Create date string in YYYY-MM-DD format to prevent timezone issues
+    const formatDateNoTimezone = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     // Prepare patient data
     const patientData = {
       patientId: patientId,
@@ -74,7 +82,7 @@ const AddPatient = () => {
       HCProvider: healthFund,
       phone: cleanPhone,
       additionalPhone: cleanAdditionalPhone,
-      visitDate: visitDate.toISOString(),
+      visitDate: formatDateNoTimezone(visitDate), // Use formatted date instead of toISOString()
       operationType: operationType,
       preparationType: preparationType,
       additionalInfo: additionalInfo,

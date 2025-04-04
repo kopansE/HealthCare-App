@@ -12,6 +12,7 @@
     "lint": "eslint src/**/*.ts",
     "seed": "ts-node src/scripts/seed.ts",
     "updatePatientIndexes": "ts-node src/scripts/updatePatientIndexes.ts",
+    "updateOperationDaySchema": "ts-node src/scripts/updateOperationDaySchema.ts",
     "seed:prod": "NODE_ENV=production ts-node src/scripts/seed.ts",
     "db:check": "ts-node src/scripts/checkDbConnection.ts"
   },
