@@ -27,7 +27,7 @@ class LocationConstraints {
       case Location.ASOTA_CALANIOT:
         return 12; // Exactly 12
       default:
-        return Infinity; // No maximum
+        return 16; // maximum
     }
   }
 
@@ -37,7 +37,7 @@ class LocationConstraints {
       case Location.ASOTA_CALANIOT:
         return 7;
       default:
-        return Infinity; // No maximum
+        return 16; // maximum
     }
   }
 
