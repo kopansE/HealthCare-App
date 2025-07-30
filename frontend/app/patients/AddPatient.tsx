@@ -4,6 +4,7 @@ import React, { useState, ChangeEvent, FormEvent } from "react";
 import DatePicker from "../utils/DatePicer";
 import IsraeliIDValidator from "../utils/IsraeliIDValidator";
 import PhoneNumberValidator from "../utils/PhoneNumberValidator";
+import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -47,7 +48,7 @@ const AddPatient = () => {
   };
 
   // Handle submission
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent, redirectToHome?: boolean) => {
     e.preventDefault();
 
     // Reset status messages
@@ -304,7 +305,7 @@ const AddPatient = () => {
           />
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button and continue */}
         <div className="flex justify-center mt-8">
           <button
             type="submit"
@@ -313,8 +314,30 @@ const AddPatient = () => {
             }`}
             disabled={isLoading}
           >
-            {isLoading ? "שומר פרטים..." : "שמור פרטי מטופל"}
+            {isLoading ? "שומר פרטים..." : "שמור מטופל והוסף מטופל נוסף"}
           </button>
+
+          <span className="mx-2"></span>
+
+          <button
+            type="button"
+            onClick={(e) => handleSubmit(e as FormEvent, true)}
+            className={`px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={isLoading}
+          >
+            שמור וחזור לעמוד הראשי
+          </button>
+
+          <span className="mx-2"></span>
+
+          <Link
+            href="../"
+            className="block p-4 bg-red-400 text-white rounded-md hover:bg-red-500 text-center"
+          >
+            חזור לתפריט הראשי
+          </Link>
         </div>
       </form>
     </div>

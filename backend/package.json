@@ -13,8 +13,10 @@
     "seed": "ts-node src/scripts/seed.ts",
     "updatePatientIndexes": "ts-node src/scripts/updatePatientIndexes.ts",
     "updateOperationDaySchema": "ts-node src/scripts/updateOperationDaySchema.ts",
+    "updateScheduleIndexes": "ts-node src/scripts/updateScheduleIndexes.ts",
     "seed:prod": "NODE_ENV=production ts-node src/scripts/seed.ts",
-    "db:check": "ts-node src/scripts/checkDbConnection.ts"
+    "db:check": "ts-node src/scripts/checkDbConnection.ts",
+    "revertScheduleIndexes": "ts-node src/scripts/revertScheduleIndexes.ts"
   },
   "keywords": [],
   "author": "",
