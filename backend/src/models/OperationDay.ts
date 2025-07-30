@@ -71,11 +71,7 @@ const OperationDaySchema: Schema<IOperationDay> = new Schema<IOperationDay>(
   }
 );
 
-// Add a compound index to ensure uniqueness of date+location+doctorId
-OperationDaySchema.index(
-  { date: 1, location: 1, doctorId: 1 },
-  { unique: true }
-);
+OperationDaySchema.index({ doctorId: 1, date: 1 });
 
 // Create and export the Operation Day model
 export default mongoose.model<IOperationDay>(
